@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -16,7 +17,9 @@ func main() {
 	if len(os.Args) == 1 {
 		log.Fatal("Please give me one argument!")
 	}
-	var Tag *string = pflag.StringP("tag", "t", "", "fat cats")
+	var Tag *string = pflag.StringP("tag", "t", "", "tag cats")
+	var Says *string = pflag.StringP("says", "s", "", "cat will say hello")
+	var Filter *string = pflag.StringP("filter", "f", "", "filter for cute cats") //blur, mono, sepia, negative, paint, pixel
 	var Height *int = pflag.IntP("height", "h", 0, "image height")
 	var Width *int = pflag.IntP("width", "w", 0, "image width")
 	pflag.Parse()
@@ -26,7 +29,7 @@ func main() {
 		log.Fatal("no name in arguments")
 	}
 
-	URL := SayMyURL(*Height, *Width, *Tag)
+	URL := SayMyURL(*Height, *Width, *Tag, *Filter, *Says)
 	response, err := http.Get(URL.String())
 	if err != nil {
 		log.Fatal("website access problems", err)
@@ -55,8 +58,11 @@ func main() {
 	}
 }
 
-func SayMyURL(height, width int, tag string) url.URL {
+func SayMyURL(height, width int, tag, filter, says string) url.URL {
 	v := url.Values{}
+	if filter != "" {
+		v.Set("filter", filter)
+	}
 	if width != 0 {
 		v.Set("width", strconv.Itoa(width))
 	}
@@ -70,6 +76,10 @@ func SayMyURL(height, width int, tag string) url.URL {
 		RawQuery: v.Encode(),
 	}
 	url = *url.JoinPath(tag)
+	if says != "" {
+		url = *url.JoinPath("says", says)
+	}
+	fmt.Println(&url)
 	return url
 }
 
