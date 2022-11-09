@@ -11,25 +11,64 @@ import (
 	"strconv"
 
 	"github.com/spf13/pflag"
+	"gopkg.in/yaml.v3"
+)
+
+type YamlConfigs struct {
+	Tag    string `yaml:"tag"`
+	Says   string `yaml:"says"`
+	Filter string `yaml:"filter"`
+	Height int    `yaml:"height"`
+	Widht  int    `yaml:"widht"`
+}
+
+var (
+	Tag, Says, Filter, Config *string
+	Height, Width             *int
 )
 
 func main() {
 	if len(os.Args) == 1 {
 		log.Fatal("Please give me one argument!")
 	}
-	var Tag *string = pflag.StringP("tag", "t", "", "tag cats")
-	var Says *string = pflag.StringP("says", "s", "", "cat will say hello")
-	var Filter *string = pflag.StringP("filter", "f", "", "filter for cute cats") //blur, mono, sepia, negative, paint, pixel
-	var Height *int = pflag.IntP("height", "h", 0, "image height")
-	var Width *int = pflag.IntP("width", "w", 0, "image width")
+
+	Tag = pflag.StringP("tag", "t", "", "tag cats")
+	Says = pflag.StringP("says", "s", "", "cat will say hello")
+	Filter = pflag.StringP("filter", "f", "", "filter for cute cats") //blur, mono, sepia, negative, paint, pixel
+	Height = pflag.IntP("height", "h", 0, "image height")
+	Width = pflag.IntP("width", "w", 0, "image width")
+	Config = pflag.StringP("config", "c", "./config.yaml", "yaml config")
 	pflag.Parse()
+
+	c := YamlConfigs{}
+	test, err := os.ReadFile(*Config)
+	if err != nil {
+		log.Fatal("problem with yaml", err)
+	}
+	yaml.Unmarshal(test, &c)
+	if *Tag == "" {
+		Tag = &c.Tag
+	}
+	if *Says == "" {
+		Says = &c.Says
+	}
+	if *Filter == "" {
+		Filter = &c.Filter
+	}
+	if *Height == 0 {
+		Height = &c.Height
+	}
+	if *Width == 0 {
+		Width = &c.Widht
+	}
+	fmt.Println(c.Widht)
 
 	filename := pflag.Arg(0)
 	if filename == "" {
 		log.Fatal("no name in arguments")
 	}
 
-	URL := SayMyURL(*Height, *Width, *Tag, *Filter, *Says)
+	URL := SayMyURL(*Height, *Width, *Tag, *Filter, *Says, *Config)
 	response, err := http.Get(URL.String())
 	if err != nil {
 		log.Fatal("website access problems", err)
@@ -58,7 +97,7 @@ func main() {
 	}
 }
 
-func SayMyURL(height, width int, tag, filter, says string) url.URL {
+func SayMyURL(height, width int, tag, filter, says, config string) url.URL {
 	v := url.Values{}
 	if filter != "" {
 		v.Set("filter", filter)

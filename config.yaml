@@ -1,0 +1,6 @@
+---
+  tag: cute
+  says: Hello!
+  filter: puxel #blur, mono, sepia, negative, paint, pixel
+  height: 300
+  widht: 600
