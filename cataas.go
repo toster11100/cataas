@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -14,7 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type YamlConfigs struct {
+type YamlConfig struct {
 	Tag    string `yaml:"tag"`
 	Says   string `yaml:"says"`
 	Filter string `yaml:"filter"`
@@ -22,22 +21,22 @@ type YamlConfigs struct {
 	Widht  int    `yaml:"widht"`
 }
 
-var (
+type Flag struct {
 	Tag, Says, Filter, Config *string
 	Height, Width             *int
-)
+}
 
 func main() {
 	if len(os.Args) == 1 {
 		log.Fatal("Please give me one argument!\n")
 	}
-
-	Tag = pflag.StringP("tag", "t", "", "tag cats")
-	Says = pflag.StringP("says", "s", "", "cat will say hello")
-	Filter = pflag.StringP("filter", "f", "", "filter for cute cats")
-	Height = pflag.IntP("height", "h", 0, "image height")
-	Width = pflag.IntP("width", "w", 0, "image width")
-	Config = pflag.StringP("config", "c", "./config.yaml", "yaml config")
+	arg := Flag{}
+	arg.Tag = pflag.StringP("tag", "t", "", "tag cats")
+	arg.Says = pflag.StringP("says", "s", "", "cat will say hello")
+	arg.Filter = pflag.StringP("filter", "f", "", "filter for cute cats")
+	arg.Height = pflag.IntP("height", "h", 0, "image height")
+	arg.Config = pflag.StringP("config", "c", "./config.yaml", "yaml config")
+	arg.Width = pflag.IntP("width", "w", 0, "image width")
 	pflag.Parse()
 
 	filename := pflag.Arg(0)
@@ -45,9 +44,15 @@ func main() {
 		log.Fatal("no name in arguments\n")
 	}
 
-	FlagOrYaml(*Height, *Width, *Tag, *Filter, *Says, *Config)
+	FileYAML, err := os.ReadFile(*arg.Config)
+	if err != nil {
+		log.Fatal("problem with yaml config\n", err)
+	}
+	c := YamlConfig{}
+	yaml.Unmarshal(FileYAML, &c)
 
-	URL := SayMyURL(*Height, *Width, *Tag, *Filter, *Says)
+	URL := c.SayMyURL(arg)
+
 	response, err := http.Get(URL.String())
 	if err != nil {
 		log.Fatal("website access problems\n", err)
@@ -76,29 +81,43 @@ func main() {
 	}
 }
 
-func SayMyURL(height, width int, tag, filter, says string) url.URL {
+func (c YamlConfig) SayMyURL(arg Flag) url.URL {
+	if *arg.Tag == "" {
+		*arg.Tag = c.Tag
+	}
+	if *arg.Says == "" {
+		*arg.Says = c.Says
+	}
+	if *arg.Filter == "" {
+		*arg.Filter = c.Filter
+	}
+	if *arg.Height == 0 {
+		*arg.Height = c.Height
+	}
+	if *arg.Width == 0 {
+		*arg.Width = c.Widht
+	}
 	v := url.Values{}
-	if filter != "" {
-		v.Set("filter", filter)
+	if *arg.Filter != "" {
+		v.Set("filter", *arg.Filter)
 	}
-	if width != 0 {
-		v.Set("width", strconv.Itoa(width))
+	if *arg.Width != 0 {
+		v.Set("width", strconv.Itoa(*arg.Width))
 	}
-	if height != 0 {
-		v.Set("height", strconv.Itoa(height))
+	if *arg.Height != 0 {
+		v.Set("height", strconv.Itoa(*arg.Height))
 	}
-	url := url.URL{
+	URL := url.URL{
 		Scheme:   "https",
 		Host:     "cataas.com",
 		Path:     "/cat",
 		RawQuery: v.Encode(),
 	}
-	url = *url.JoinPath(tag)
-	if says != "" {
-		url = *url.JoinPath("says", says)
+	URL = *URL.JoinPath(*arg.Tag)
+	if *arg.Says != "" {
+		URL = *URL.JoinPath("says", *arg.Says)
 	}
-	fmt.Println(&url)
-	return url
+	return URL
 }
 
 func GetFormat(format string) (string, error) {
@@ -109,31 +128,4 @@ func GetFormat(format string) (string, error) {
 		return ".jpeg", nil
 	}
 	return "", errors.New("unknow format")
-}
-
-func FlagOrYaml(height, width int, tag, filter, says, config string) {
-	c := YamlConfigs{}
-	FileYAML, err := os.ReadFile(*Config)
-	if err != nil {
-		log.Fatal("problem with yaml config\n", err)
-	}
-	err = yaml.Unmarshal(FileYAML, &c)
-	if err != nil {
-		log.Fatal("problem with unmarshal\n", err)
-	}
-	if *Tag == "" {
-		Tag = &c.Tag
-	}
-	if *Says == "" {
-		Says = &c.Says
-	}
-	if *Filter == "" {
-		Filter = &c.Filter
-	}
-	if *Height == 0 {
-		Height = &c.Height
-	}
-	if *Width == 0 {
-		Width = &c.Widht
-	}
 }
