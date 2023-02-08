@@ -64,11 +64,13 @@ func GetUrl(url *url.URL) (*http.Response, error) {
 	return resUrl, nil
 }
 
-func GetFormat(format string) (string, error) {
+func GetFormat(resUrl *http.Response) (string, error) {
+	contentType := resUrl.Header.Get("Content-Type")
+
 	switch {
-	case format == "image/png":
+	case contentType == "image/png":
 		return ".png", nil
-	case format == "image/jpeg":
+	case contentType == "image/jpeg":
 		return ".jpeg", nil
 	}
 	return "", errors.New("unknow format")

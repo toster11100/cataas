@@ -27,7 +27,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fotmat, err := app.GetFormat(resUrl.Header.Get("Content-Type"))
+	fotmat, err := app.GetFormat(resUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
