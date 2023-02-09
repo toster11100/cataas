@@ -26,7 +26,7 @@ $ go build -o cataas ./cmd/cats/main.go
 ## Usage
 Once you have compiled the application, you can run it with the following command:
 ```bash
-./cataas [options]
+./cataas -flag
 ```
 ---
 ## Options
@@ -47,7 +47,7 @@ $ ./cataas cat -t cute --say "Hello World" -f sepia -h 600 -w 600
 ```
 ---
 ## Configuration
-Users can also specify the image characteristics in a YAML configuration file, instead of using command-line flags. The path to the configuration file can be specified using the -c or --config flag.
+Users can also specify the image characteristics in a YAML configuration file, instead of using command-line flags. The path to the configuration file can be specified using the `-c` or `--config` flag.
 
 ---
 ## Contributions
