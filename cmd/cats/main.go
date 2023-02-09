@@ -1,9 +1,7 @@
 package main
 
 import (
-	"io"
 	"log"
-	"os"
 
 	"main.go/interal/app"
 	"main.go/interal/config"
@@ -26,16 +24,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	file, err := os.Create(config.Name + cataas.Format)
+	err = cataas.SavePicture()
 	if err != nil {
-		log.Fatalf("unable to create file %v", err)
+		log.Fatal(err)
 	}
 
-	_, err = io.Copy(file, cataas.Res.Body)
-	if err != nil {
-		log.Fatalf("unable to write file %v", err)
-	}
-
-	defer file.Close()
 	defer cataas.Res.Body.Close()
 }

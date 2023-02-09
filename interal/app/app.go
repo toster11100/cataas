@@ -3,23 +3,27 @@ package app
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 
 	"main.go/interal/config"
 )
 
 type Cat struct {
-	URL    *url.URL
-	Res    *http.Response
-	Format string
+	URL     *url.URL
+	Res     *http.Response
+	Format  string
+	catConf config.Config
 }
 
 func New(config config.Config) (*Cat, error) {
 	cat := &Cat{}
+	cat.catConf = config
 
-	cat.createURL(config)
+	cat.createURL()
 	if err := cat.getRes(); err != nil {
 		return nil, err
 	}
@@ -30,17 +34,17 @@ func New(config config.Config) (*Cat, error) {
 	return cat, nil
 }
 
-func (cat *Cat) createURL(config config.Config) {
+func (cat *Cat) createURL() {
 	v := url.Values{}
 
-	if config.Filter != "" {
-		v.Set("filter", config.Filter)
+	if cat.catConf.Filter != "" {
+		v.Set("filter", cat.catConf.Filter)
 	}
-	if config.Width != 0 {
-		v.Set("width", strconv.Itoa(config.Width))
+	if cat.catConf.Width != 0 {
+		v.Set("width", strconv.Itoa(cat.catConf.Width))
 	}
-	if config.Height != 0 {
-		v.Set("height", strconv.Itoa(config.Height))
+	if cat.catConf.Height != 0 {
+		v.Set("height", strconv.Itoa(cat.catConf.Height))
 	}
 
 	catURL := &url.URL{
@@ -50,9 +54,9 @@ func (cat *Cat) createURL(config config.Config) {
 		RawQuery: v.Encode(),
 	}
 
-	catURL = catURL.JoinPath(config.Tag)
-	if config.Say != "" {
-		catURL = catURL.JoinPath("says", config.Say)
+	catURL = catURL.JoinPath(cat.catConf.Tag)
+	if cat.catConf.Say != "" {
+		catURL = catURL.JoinPath("says", cat.catConf.Say)
 	}
 	cat.URL = catURL
 }
@@ -87,5 +91,20 @@ func (cat *Cat) getFormat() error {
 		return fmt.Errorf("unknown format: %s", contentType)
 	}
 	cat.Format = format
+	return nil
+}
+
+func (cat *Cat) SavePicture() error {
+	file, err := os.Create(cat.catConf.Name + cat.Format)
+	if err != nil {
+		return fmt.Errorf("unable to create file %v", err)
+	}
+
+	_, err = io.Copy(file, cat.Res.Body)
+	if err != nil {
+		return fmt.Errorf("unable to write file %v", err)
+	}
+
+	defer file.Close()
 	return nil
 }
