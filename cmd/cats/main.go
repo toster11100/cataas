@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -11,35 +12,31 @@ import (
 )
 
 func main() {
-	flags, err := flags.New()
+	flags, err := flags.ParseOptions()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	defVal, err := config.DefConfig(flags.Config)
+	config, err := config.FromFile(*flags)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	url := app.CreatedUrl(*flags, *defVal)
-	resUrl, err := app.GetUrl(url)
+	cataas, err := app.New(*config)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fotmat, err := app.GetFormat(resUrl)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	file, err := os.Create(flags.Name + fotmat)
+	fmt.Println(cataas.URL)
+	file, err := os.Create(config.Name + cataas.Format)
 	if err != nil {
 		log.Fatalf("unable to create file %v", err)
 	}
 
-	_, err = io.Copy(file, resUrl.Body)
+	_, err = io.Copy(file, cataas.Res.Body)
 	if err != nil {
 		log.Fatalf("unable to write file %v", err)
 	}
 
+	defer file.Close()
+	defer cataas.Res.Body.Close()
 }

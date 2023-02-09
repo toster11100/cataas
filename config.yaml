@@ -1,6 +1,7 @@
 ---
+  name: #name
   tag: fat #cute, fat, fun, fanny, sing, 
-  says:   #hello
-  filter:  #blur, mono, sepia, negative, paint, pixel
+  say: #hello
+  filter: #blur, mono, sepia, negative, paint, pixel
   height: 600
   width: 800

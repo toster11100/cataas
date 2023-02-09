@@ -8,70 +8,84 @@ import (
 	"strconv"
 
 	"main.go/interal/config"
-	"main.go/interal/flags"
 )
 
-func CreatedUrl(flag flags.Flags, defFlag config.DefaultFlags) *url.URL {
-	if flag.Tag == "" {
-		flag.Tag = defFlag.Tag
+type Cat struct {
+	URL    *url.URL
+	Res    *http.Response
+	Format string
+}
+
+func New(config config.Config) (*Cat, error) {
+	cat := &Cat{}
+
+	cat.createURL(config)
+	if err := cat.getRes(); err != nil {
+		return nil, err
 	}
-	if flag.Says == "" {
-		flag.Says = defFlag.Says
+	if err := cat.getFormat(); err != nil {
+		return nil, err
 	}
-	if flag.Filter == "" {
-		flag.Filter = defFlag.Filter
-	}
-	if flag.Height == 0 {
-		flag.Height = defFlag.Height
-	}
-	if flag.Width == 0 {
-		flag.Width = defFlag.Width
-	}
+
+	return cat, nil
+}
+
+func (cat *Cat) createURL(config config.Config) {
 	v := url.Values{}
 
-	if flag.Filter != "" {
-		v.Set("filter", flag.Filter)
+	if config.Filter != "" {
+		v.Set("filter", config.Filter)
 	}
-	if flag.Width != 0 {
-		v.Set("width", strconv.Itoa(flag.Width))
+	if config.Width != 0 {
+		v.Set("width", strconv.Itoa(config.Width))
 	}
-	if flag.Height != 0 {
-		v.Set("height", strconv.Itoa(flag.Height))
+	if config.Height != 0 {
+		v.Set("height", strconv.Itoa(config.Height))
 	}
 
-	u := &url.URL{
+	catURL := &url.URL{
 		Scheme:   "https",
 		Host:     "cataas.com",
 		Path:     "/cat",
 		RawQuery: v.Encode(),
 	}
 
-	u = u.JoinPath(flag.Tag)
-	if flag.Says != "" {
-		u = u.JoinPath("says", flag.Says)
+	catURL = catURL.JoinPath(config.Tag)
+	if config.Say != "" {
+		catURL = catURL.JoinPath("says", config.Say)
 	}
-
-	return u
+	cat.URL = catURL
 }
 
-func GetUrl(url *url.URL) (*http.Response, error) {
-	resUrl, err := http.Get(url.String())
+func (cat *Cat) getRes() error {
+	res, err := http.Get(cat.URL.String())
 	if err != nil {
-		return nil, fmt.Errorf("website access problems %v", err)
+		return fmt.Errorf("website access problems: %v", err)
 	}
-	defer resUrl.Body.Close()
+	cat.Res = res
 
-	return resUrl, nil
+	if cat.Res.StatusCode != http.StatusOK {
+		return fmt.Errorf("received non-200 status code: %d", cat.Res.StatusCode)
+	}
+
+	return nil
 }
 
-func GetFormat(resUrl *http.Response) (string, error) {
-	contentType := resUrl.Header.Get("Content-Type")
-
-	switch {
-	case contentType == "image/png":
-		return ".png", nil
-	case contentType == "image/jpeg":
-		return ".jpeg", nil
+func (cat *Cat) getFormat() error {
+	contentType := cat.Res.Header.Get("Content-Type")
+	if contentType == "" {
+		return errors.New("empty Content-Type header")
 	}
-	return "", errors.New("unknow format")
+
+	format := ""
+	switch contentType {
+	case "image/png":
+		format = ".png"
+	case "image/jpeg":
+		format = ".jpeg"
+	default:
+		return fmt.Errorf("unknown format: %s", contentType)
+	}
+	cat.Format = format
+	return nil
 }

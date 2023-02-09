@@ -10,26 +10,23 @@ import (
 type Flags struct {
 	Name   string
 	Tag    string
-	Says   string
+	Say    string
 	Filter string
 	Config string
 	Height int
 	Width  int
 }
 
-func New() (*Flags, error) {
+func ParseOptions() (*Flags, error) {
 	if len(os.Args) == 1 {
 		return nil, errors.New("please provide at least one argument")
 	}
 
-	flags := &Flags{
-		Config: "./config.yaml",
-	}
-
+	flags := &Flags{}
 	pflag.StringVarP(&flags.Tag, "tag", "t", "", "tag cats")
-	pflag.StringVarP(&flags.Says, "says", "s", "", "text for image")
+	pflag.StringVarP(&flags.Say, "say", "s", "", "text for image")
 	pflag.StringVarP(&flags.Filter, "filter", "f", "", "filter for image")
-	pflag.StringVarP(&flags.Config, "config", "c", flags.Config, "yaml config")
+	pflag.StringVarP(&flags.Config, "config", "c", "./config.yaml", "yaml config")
 	pflag.IntVarP(&flags.Height, "height", "h", 0, "image height")
 	pflag.IntVarP(&flags.Width, "width", "w", 0, "image width")
 	pflag.Parse()
