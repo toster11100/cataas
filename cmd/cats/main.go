@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -26,7 +25,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(cataas.URL)
+
 	file, err := os.Create(config.Name + cataas.Format)
 	if err != nil {
 		log.Fatalf("unable to create file %v", err)
