@@ -19,15 +19,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cataas, err := app.New(*config)
-	if err != nil {
+	cataas := app.New(*config)
+
+	if err = cataas.GetCat(); err != nil {
 		log.Fatal(err)
 	}
 
-	err = cataas.SavePicture()
-	if err != nil {
+	if err = cataas.SavePicture(); err != nil {
 		log.Fatal(err)
 	}
-
-	defer cataas.Res.Body.Close()
 }

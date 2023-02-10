@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -13,38 +14,24 @@ import (
 )
 
 type Cat struct {
-	URL     *url.URL
-	Res     *http.Response
-	Format  string
-	catConf config.Config
+	url     *url.URL
+	resByte []byte
+	format  string
+	name    string
+	conType string
 }
 
-func New(config config.Config) (*Cat, error) {
-	cat := &Cat{}
-	cat.catConf = config
-
-	cat.createURL()
-	if err := cat.getRes(); err != nil {
-		return nil, err
-	}
-	if err := cat.getFormat(); err != nil {
-		return nil, err
-	}
-
-	return cat, nil
-}
-
-func (cat *Cat) createURL() {
+func New(config config.Config) *Cat {
 	v := url.Values{}
 
-	if cat.catConf.Filter != "" {
-		v.Set("filter", cat.catConf.Filter)
+	if config.Filter != "" {
+		v.Set("filter", config.Filter)
 	}
-	if cat.catConf.Width != 0 {
-		v.Set("width", strconv.Itoa(cat.catConf.Width))
+	if config.Width != 0 {
+		v.Set("width", strconv.Itoa(config.Width))
 	}
-	if cat.catConf.Height != 0 {
-		v.Set("height", strconv.Itoa(cat.catConf.Height))
+	if config.Height != 0 {
+		v.Set("height", strconv.Itoa(config.Height))
 	}
 
 	catURL := &url.URL{
@@ -54,57 +41,84 @@ func (cat *Cat) createURL() {
 		RawQuery: v.Encode(),
 	}
 
-	catURL = catURL.JoinPath(cat.catConf.Tag)
-	if cat.catConf.Say != "" {
-		catURL = catURL.JoinPath("says", cat.catConf.Say)
+	catURL = catURL.JoinPath(config.Tag)
+	if config.Say != "" {
+		catURL = catURL.JoinPath("says", config.Say)
 	}
-	cat.URL = catURL
+
+	cat := &Cat{
+		url:  catURL,
+		name: config.Name,
+	}
+	return cat
+}
+
+func (cat *Cat) GetCat() error {
+	if err := cat.getRes(); err != nil {
+		return err
+	}
+
+	if err := cat.getFormat(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (cat *Cat) getRes() error {
-	res, err := http.Get(cat.URL.String())
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, cat.url.String(), nil)
+	if err != nil {
+		return fmt.Errorf("error creating request: %v", err)
+	}
+
+	res, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("website access problems: %v", err)
 	}
-	cat.Res = res
 
-	if cat.Res.StatusCode != http.StatusOK {
-		return fmt.Errorf("received non-200 status code: %d", cat.Res.StatusCode)
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("received non-200 status code: %d", res.StatusCode)
+	}
+	defer res.Body.Close()
+
+	cat.conType = res.Header.Get("Content-Type")
+	if cat.conType == "" {
+		return errors.New("empty Content-Type header")
 	}
 
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("error reading response: %v", err)
+	}
+	cat.resByte = body
 	return nil
 }
 
 func (cat *Cat) getFormat() error {
-	contentType := cat.Res.Header.Get("Content-Type")
-	if contentType == "" {
-		return errors.New("empty Content-Type header")
-	}
-
-	format := ""
-	switch contentType {
+	var format string
+	switch cat.conType {
 	case "image/png":
 		format = ".png"
 	case "image/jpeg":
 		format = ".jpeg"
 	default:
-		return fmt.Errorf("unknown format: %s", contentType)
+		return fmt.Errorf("unknown format: %s", cat.conType)
 	}
-	cat.Format = format
+
+	cat.format = format
 	return nil
 }
 
 func (cat *Cat) SavePicture() error {
-	file, err := os.Create(cat.catConf.Name + cat.Format)
+	file, err := os.Create(cat.name + cat.format)
 	if err != nil {
 		return fmt.Errorf("unable to create file %v", err)
 	}
 
-	_, err = io.Copy(file, cat.Res.Body)
+	_, err = io.Copy(file, bytes.NewReader(cat.resByte))
 	if err != nil {
 		return fmt.Errorf("unable to write file %v", err)
 	}
 
-	defer file.Close()
-	return nil
+	return file.Close()
 }
