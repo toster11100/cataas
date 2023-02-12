@@ -15,8 +15,7 @@ import (
 
 type Cat struct {
 	url     *url.URL
-	resByte []byte
-	format  string
+	resBody []byte
 	name    string
 	conType string
 }
@@ -90,7 +89,8 @@ func (cat *Cat) getRes() error {
 	if err != nil {
 		return fmt.Errorf("error reading response: %v", err)
 	}
-	cat.resByte = body
+
+	cat.resBody = body
 	return nil
 }
 
@@ -105,17 +105,17 @@ func (cat *Cat) getFormat() error {
 		return fmt.Errorf("unknown format: %s", cat.conType)
 	}
 
-	cat.format = format
+	cat.name += format
 	return nil
 }
 
 func (cat *Cat) SavePicture() error {
-	file, err := os.Create(cat.name + cat.format)
+	file, err := os.Create(cat.name)
 	if err != nil {
 		return fmt.Errorf("unable to create file %v", err)
 	}
 
-	_, err = io.Copy(file, bytes.NewReader(cat.resByte))
+	_, err = io.Copy(file, bytes.NewReader(cat.resBody))
 	if err != nil {
 		return fmt.Errorf("unable to write file %v", err)
 	}
