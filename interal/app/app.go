@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 
 	"main.go/interal/config"
 )
@@ -64,8 +66,13 @@ func (cat *Cat) GetCat() error {
 }
 
 func (cat *Cat) getRes() error {
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, cat.url.String(), nil)
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	cnt, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(cnt, http.MethodGet, cat.url.String(), nil)
 	if err != nil {
 		return fmt.Errorf("error creating request: %v", err)
 	}
