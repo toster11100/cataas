@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
-	"main.go/interal/app"
-	"main.go/interal/config"
-	"main.go/interal/flags"
+	"main.go/internal/app"
+	"main.go/internal/config"
+	"main.go/internal/flags"
 )
 
 func main() {
