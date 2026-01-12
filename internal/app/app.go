@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	"main.go/interal/config"
+	"main.go/internal/config"
 )
 
 type Cat struct {
@@ -82,10 +82,10 @@ func (cat *Cat) getRes() error {
 		return fmt.Errorf("website access problems: %v", err)
 	}
 
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("received non-200 status code: %d", res.StatusCode)
 	}
-	defer res.Body.Close()
 
 	cat.conType = res.Header.Get("Content-Type")
 	if cat.conType == "" {

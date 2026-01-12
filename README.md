@@ -33,7 +33,7 @@ Once you have compiled the application, you can run it with the following comman
 The following options are available:
 - name: name for the image, this is a required option
 - `-t` or `--tag`: tag that can be added to an image
-- `-s` or `--says`: text that can be added to an image
+- `-s` or `--say`: text that can be added to an image
 - `-f` or `--filter`: filter that can be added to an image
 - `-h` or `--height`: height of the image in pixels
 - `-w` or `--width`: width of the image in pixels

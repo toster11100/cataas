@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"gopkg.in/yaml.v3"
-	"main.go/interal/flags"
+	"main.go/internal/flags"
 )
 
 type Config struct {
